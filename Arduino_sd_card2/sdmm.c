@@ -211,7 +211,7 @@ void rcvr_mmc (
 	UINT bc		/* Number of bytes to receive */
 )
 {
-	BYTE r;
+	//BYTE r;
 
 
 	//DI_H();	/* Send 0xFF */

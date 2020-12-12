@@ -669,19 +669,19 @@ END GROUP
 .debug_pubnames
  *(.debug_pubnames)
 
-.debug_info     0x00000000     0x58a9
+.debug_info     0x00000000     0x58a0
  *(.debug_info .gnu.linkonce.wi.*)
  .debug_info    0x00000000      0x5f4 C:/Program Files (x86)/Atmel/Studio/7.0/Packs/atmel/ATmega_DFP/1.6.364/gcc/dev/atmega328p/avr5/crtatmega328p.o
  .debug_info    0x000005f4     0x366d ff.o
  .debug_info    0x00003c61      0xf17 main.o
- .debug_info    0x00004b78      0xd31 sdmm.o
+ .debug_info    0x00004b78      0xd28 sdmm.o
 
-.debug_abbrev   0x00000000      0xec9
+.debug_abbrev   0x00000000      0xebc
  *(.debug_abbrev)
  .debug_abbrev  0x00000000      0x5a2 C:/Program Files (x86)/Atmel/Studio/7.0/Packs/atmel/ATmega_DFP/1.6.364/gcc/dev/atmega328p/avr5/crtatmega328p.o
  .debug_abbrev  0x000005a2      0x2f3 ff.o
  .debug_abbrev  0x00000895      0x371 main.o
- .debug_abbrev  0x00000c06      0x2c3 sdmm.o
+ .debug_abbrev  0x00000c06      0x2b6 sdmm.o
 
 .debug_line     0x00000000     0x2d1b
  *(.debug_line .debug_line.* .debug_line_end)
@@ -696,15 +696,15 @@ END GROUP
  .debug_frame   0x000009dc      0x214 main.o
  .debug_frame   0x00000bf0      0x284 sdmm.o
 
-.debug_str      0x00000000      0xb53
+.debug_str      0x00000000      0xb44
  *(.debug_str)
  .debug_str     0x00000000      0x208 C:/Program Files (x86)/Atmel/Studio/7.0/Packs/atmel/ATmega_DFP/1.6.364/gcc/dev/atmega328p/avr5/crtatmega328p.o
- .debug_str     0x00000208      0x692 ff.o
-                                0x6ff (size before relaxing)
- .debug_str     0x0000089a      0x1e6 main.o
-                                0x5d7 (size before relaxing)
- .debug_str     0x00000a80       0xd3 sdmm.o
-                                0x333 (size before relaxing)
+ .debug_str     0x00000208      0x683 ff.o
+                                0x6f0 (size before relaxing)
+ .debug_str     0x0000088b      0x1e6 main.o
+                                0x5c8 (size before relaxing)
+ .debug_str     0x00000a71       0xd3 sdmm.o
+                                0x324 (size before relaxing)
 
 .debug_loc      0x00000000     0x7607
  *(.debug_loc)
