@@ -189,6 +189,13 @@ ISR(TIMER0_COMPA_vect)
 	
 }
 
+void append_string(char *string,char  *string_to_append){
+	
+	char *p = string + strlen(string);
+	strcpy(p, string_to_append);
+	
+}
+
 int main (void) // clock 16 Mhz
 {
 
@@ -228,8 +235,8 @@ init_timer();
 UINT licznik = 0;
 // do 
 // {
-// 	fr = f_open(&Fil, "WRITE.TXT", FA_WRITE | FA_CREATE_ALWAYS );	/* Create a file */
-// 	Sent_error_message(fr, "File open WRITE.TXT");
+// 	fr = f_open(&Fil, "WRITE2.TXT", FA_WRITE | FA_CREATE_ALWAYS );	/* Create a file */
+// 	Sent_error_message(fr, "File open WRITE2.TXT");
 // 	licznik ++;
 // 	_delay_ms(50);
 // } while (fr!=FR_OK&& licznik < 10);
@@ -249,9 +256,9 @@ UINT licznik = 0;
 // 
 // 
 // 
-// 	fr = f_open(&Fil, "PANTAD.TXT", FA_WRITE | FA_OPEN_APPEND | FA_READ);	/* Create a file */
-// 	Sent_error_message(fr, "File open PANTAD.TXT");
-// 	if (fr == FR_OK) {
+ 	fr = f_open(&Fil, "WRITE2.TXT", FA_WRITE | FA_OPEN_APPEND | FA_READ);	/* Create a file */
+ 	Sent_error_message(fr, "File open WRITE2.TXT");
+ 	if (fr == FR_OK) {
 // 		//SET_LED_ON();
 // 		
 // 		//UINT Bytes_Written;
@@ -262,40 +269,40 @@ UINT licznik = 0;
 // 			//DDRB |= (1<<5); PORTB |= (1<<5);	/* Set PB4 high */
 // 		//}
 // 		
-// 		fr = f_rewind(&Fil);
-// 		Sent_error_message(fr, "Rewind file");
-// 		/*
-// 		UINT Bytes_to_read = 512;
-// 		UINT Bytes_readed = 0;
-// 		do 
-// 		{
-// 			
-// 			BYTE Buff[520];
-// 
-// 			fr = f_read ( &Fil, Buff, Bytes_to_read, &Bytes_readed);
-// 			//Sent_error_message(fr, "Read file");
-// 			if(fr) Sent_error_message(fr, "Read file");
-// 			
-// 			if (fr == FR_OK){
-// 				//uart_puts("Number of readed bytes: ");
-// 				char b[ 32 ];
-// 				itoa( Bytes_readed, b, 10 );
-// 				//uart_puts_rn(b);
-// 				
-// 				//uart_puts_rn("Bytes Readed: ");
-// 				uart_puts_with_length((char*)(Buff), Bytes_readed);
-// 				//uart_puts_rn("");
-// 				if(Bytes_to_read != Bytes_readed){
-// 					uart_puts_rn("End of file");
-// 				}
-// 			}
-// 			
-// 		} while (Bytes_to_read == Bytes_readed && fr == FR_OK);
-// 		*/
-// 		
-// 		fr = f_close(&Fil);	
-// 		Sent_error_message(fr, "Close file");
-// 	}
+ 		fr = f_rewind(&Fil);
+		Sent_error_message(fr, "Rewind file");
+ 		
+		UINT Bytes_to_read = 512;
+		UINT Bytes_readed = 0;
+		do 
+		{
+			
+			BYTE Buff[520];
+
+			fr = f_read ( &Fil, Buff, Bytes_to_read, &Bytes_readed);
+			//Sent_error_message(fr, "Read file");
+			if(fr) Sent_error_message(fr, "Read file");
+			
+			if (fr == FR_OK){
+				//uart_puts("Number of readed bytes: ");
+				char b[ 32 ];
+				itoa( Bytes_readed, b, 10 );
+				//uart_puts_rn(b);
+				
+				//uart_puts_rn("Bytes Readed: ");
+				uart_puts_with_length((char*)(Buff), Bytes_readed);
+				//uart_puts_rn("");
+				if(Bytes_to_read != Bytes_readed){
+					uart_puts_rn("End of file");
+				}
+			}
+			
+		} while (Bytes_to_read == Bytes_readed && fr == FR_OK);
+		
+		
+		fr = f_close(&Fil);	
+		Sent_error_message(fr, "Close file");
+	}
 
 // 	for (;;) {
 // 
@@ -311,36 +318,44 @@ UINT licznik = 0;
 				UINT string_size_int = strlen(licznik_32bit_string);
 				utoa( string_size_int, string_size, 10 );
 				
-				uart_puts("String size: ");
+				/*uart_puts("String size: ");
 				uart_puts(string_size);
 				uart_puts(" Licznik_32bit: ");
 				uart_puts(licznik_32bit_string);
 				uart_puts(" ADC asynchro ");
-				uart_puts_rn(adc_result_string);
+				uart_puts_rn(adc_result_string);*/
 				char string_to_sd[64];
 				string_to_sd[0]= '\0';
 				
-				strcpy(string_to_sd, "String size: ");
-				char *p = string_to_sd + strlen("String size: ");
-				strcpy(p, licznik_32bit_string);
-				uart_puts_rn(string_to_sd);
+				/*strcpy(string_to_sd, "String size: ");
+				char *p = string_to_sd + strlen(string_to_sd);
+				strcpy(p, licznik_32bit_string);*/
+				append_string(string_to_sd, "String size: ");
+				append_string(string_to_sd, string_size);
+				append_string(string_to_sd, " Licznik_32bit: ");
+				append_string(string_to_sd, licznik_32bit_string);
+				append_string(string_to_sd, " ADC asynchro: ");
+				append_string(string_to_sd, adc_result_string);
+				append_string(string_to_sd, "\r\n");
+				//uart_puts_rn(string_to_sd);
+				uart_puts(string_to_sd);
 				
 				
-// 				fr = f_open(&Fil, "WRITE.TXT", FA_WRITE | FA_CREATE_ALWAYS );	/* Create a file */
-// 				Sent_error_message(fr, "File open WRITE.TXT");
-// 				if (fr == FR_OK) {
-// 					UINT Bytes_Written;
-// 					BYTE Bytes_to_write[512];
-// 					for(int i = 0; i < 512;i++)
-// 					Bytes_to_write[i] = i;
-// 					for(int i = 0; i < 100;i++){
-// 						fr = f_write(&Fil, Bytes_to_write, 512, &Bytes_Written);	/* Write data to the file */
-// 						Sent_error_message(fr, "File write WRITE.TXT");
-// 					}
-// 					fr = f_close(&Fil);
-// 					Sent_error_message(fr, "Close file WRITE.TXT");
-// 				
-// 				}
+				fr = f_open(&Fil, "WRITE2.TXT", FA_WRITE | FA_OPEN_APPEND );	/* Create a file */
+				Sent_error_message(fr, "File open WRITE2.TXT");
+				if (fr == FR_OK) {
+					UINT Bytes_Written;
+					BYTE Bytes_to_write[512];
+					//for(int i = 0; i < 512;i++)
+					//Bytes_to_write[i] = i;
+					//for(int i = 0; i < 100;i++){
+						fr = f_write(&Fil, (BYTE*)(string_to_sd), strlen(string_to_sd), &Bytes_Written);	/* Write data to the file */
+						Sent_error_message(fr, "File write WRITE2.TXT");
+					//}
+					fr = f_close(&Fil);
+					Sent_error_message(fr, "Close file WRITE2.TXT");
+				
+				}
 		
 		
 		}
