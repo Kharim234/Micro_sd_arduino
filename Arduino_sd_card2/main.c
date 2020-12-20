@@ -275,6 +275,7 @@ init_timer();
 // 
 // 
  	fr = f_open(&Fil, "WRITE2.TXT", FA_WRITE | FA_OPEN_APPEND | FA_READ);	/* Create a file */
+	// fr = f_open(&Fil, "WRITE2.TXT", FA_WRITE | FA_CREATE_ALWAYS );
  	Sent_error_message(fr, "File open WRITE2.TXT");
  	if (fr == FR_OK) {
 // 		//SET_LED_ON();
@@ -364,13 +365,7 @@ init_timer();
 				Buffer_string_size = strlen(Buffer_string);
 				//Buffer_string_size = 201;
 				if(Buffer_string_size > 200){
-					
-					delete_string(Buffer_string);
-					uart_puts("Buffer_string deleted\r\n");
-					
-				}
-				
-				
+								
 				fr = f_open(&Fil, "WRITE2.TXT", FA_WRITE | FA_OPEN_APPEND );	/* Create a file */
 				Sent_error_message(fr, "File open WRITE2.TXT");
 				if (fr == FR_OK) {
@@ -379,7 +374,7 @@ init_timer();
 					//for(int i = 0; i < 512;i++)
 					//Bytes_to_write[i] = i;
 					//for(int i = 0; i < 100;i++){
-						fr = f_write(&Fil, (BYTE*)(string_to_sd), strlen(string_to_sd), &Bytes_Written);	/* Write data to the file */
+						fr = f_write(&Fil, (BYTE*)(Buffer_string), strlen(Buffer_string), &Bytes_Written);	/* Write data to the file */
 						Sent_error_message(fr, "File write WRITE2.TXT");
 					//}
 					fr = f_close(&Fil);
@@ -389,10 +384,13 @@ init_timer();
 				if (fr == FR_DISK_ERR){
 					//fr = f_close(&Fil);
 					//Sent_error_message(fr, "File open WRITE2.TXT");
-					f_mount(&FatFs, "", 0);}
-		
-		
+					f_mount(&FatFs, "", 0);
+					}
+			delete_string(Buffer_string);
+			uart_puts("Buffer_string deleted\r\n");	
+			}
 		}
+		
 	}
 }
 
