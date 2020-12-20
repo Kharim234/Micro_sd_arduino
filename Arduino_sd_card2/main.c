@@ -180,7 +180,7 @@ ISR(TIMER0_COMPA_vect)
 	// user code here
 	licznik++;
 	licznik_32bit++;
-	if(licznik >= 125){ //dopelnienie do 1sec
+	if(licznik >= 2*125){ //dopelnienie do 1sec
 		//uart_puts("IT works");
 		licznik = 0;
 		start_conversion_asynchro();
@@ -221,7 +221,7 @@ init_timer();
 
 	//INIT_LED_PIN();
 	//SET_LED_ON();
-	_delay_ms(500);
+	_delay_ms(5000);
 	//SET_LED_OFF();
 
 	FRESULT fr;
@@ -356,6 +356,10 @@ UINT licznik = 0;
 					Sent_error_message(fr, "Close file WRITE2.TXT");
 				
 				}
+				if (fr == FR_DISK_ERR){
+					//fr = f_close(&Fil);
+					//Sent_error_message(fr, "File open WRITE2.TXT");
+					f_mount(&FatFs, "", 0);}
 		
 		
 		}
