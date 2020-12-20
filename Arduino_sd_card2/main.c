@@ -17,6 +17,7 @@ FIL Fil;			/* File object needed for each open file */
 #define SET_LED_ON() (PORTB |= LED_PIN)
 #define SET_LED_OFF() (PORTB &= ~LED_PIN)
 
+char Buffer_string[256];
 volatile uint16_t test = 0;
 volatile uint32_t licznik_32bit = 0;
 volatile uint16_t licznik;
@@ -180,7 +181,7 @@ ISR(TIMER0_COMPA_vect)
 	// user code here
 	licznik++;
 	licznik_32bit++;
-	if(licznik >= 2*125){ //dopelnienie do 1sec
+	if(licznik >= 125){ //dopelnienie do 1sec
 		//uart_puts("IT works");
 		licznik = 0;
 		start_conversion_asynchro();
@@ -189,12 +190,29 @@ ISR(TIMER0_COMPA_vect)
 	
 }
 
-void append_string(char *string,char  *string_to_append){
+void append_string(char *string, char  *string_to_append){
 	
 	char *p = string + strlen(string);
 	strcpy(p, string_to_append);
 	
 }
+
+void delete_string(char *string){
+	
+	//char *p = string + strlen(string);
+	//strcpy(p, string_to_append);
+	
+	*string = '\0';
+	
+}
+
+uint8_t append_string_with_limits(char *string, char *string_to_append, char max_size){
+	
+	char *p = string + strlen(string);
+	strcpy(p, string_to_append);
+	return 1;
+}
+
 
 int main (void) // clock 16 Mhz
 {
@@ -232,7 +250,7 @@ init_timer();
 
 
 //
-UINT licznik = 0;
+//UINT licznik = 0;
 // do 
 // {
 // 	fr = f_open(&Fil, "WRITE2.TXT", FA_WRITE | FA_CREATE_ALWAYS );	/* Create a file */
@@ -339,6 +357,18 @@ UINT licznik = 0;
 				append_string(string_to_sd, "\r\n");
 				//uart_puts_rn(string_to_sd);
 				uart_puts(string_to_sd);
+				
+				append_string(Buffer_string, string_to_sd);
+				uint16_t Buffer_string_size;
+				
+				Buffer_string_size = strlen(Buffer_string);
+				//Buffer_string_size = 201;
+				if(Buffer_string_size > 200){
+					
+					delete_string(Buffer_string);
+					uart_puts("Buffer_string deleted\r\n");
+					
+				}
 				
 				
 				fr = f_open(&Fil, "WRITE2.TXT", FA_WRITE | FA_OPEN_APPEND );	/* Create a file */
