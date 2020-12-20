@@ -291,12 +291,12 @@ init_timer();
  		fr = f_rewind(&Fil);
 		Sent_error_message(fr, "Rewind file");
  		
-		UINT Bytes_to_read = 512;
+		UINT Bytes_to_read = 128;
 		UINT Bytes_readed = 0;
 		do 
 		{
 			
-			BYTE Buff[520];
+			BYTE Buff[150];
 
 			fr = f_read ( &Fil, Buff, Bytes_to_read, &Bytes_readed);
 			//Sent_error_message(fr, "Read file");
@@ -344,7 +344,9 @@ init_timer();
 				uart_puts(" ADC asynchro ");
 				uart_puts_rn(adc_result_string);*/
 				char string_to_sd[64];
+				char string_to_sd2[64];
 				string_to_sd[0]= '\0';
+				string_to_sd2[0]= '\0';
 				
 				/*strcpy(string_to_sd, "String size: ");
 				char *p = string_to_sd + strlen(string_to_sd);
@@ -359,7 +361,12 @@ init_timer();
 				//uart_puts_rn(string_to_sd);
 				uart_puts(string_to_sd);
 				
-				append_string(Buffer_string, string_to_sd);
+				append_string(string_to_sd2, licznik_32bit_string);
+				append_string(string_to_sd2, ";");
+				append_string(string_to_sd2, adc_result_string);
+				append_string(string_to_sd2, "\r\n");
+				
+				append_string(Buffer_string, string_to_sd2);
 				uint16_t Buffer_string_size;
 				
 				Buffer_string_size = strlen(Buffer_string);
@@ -370,7 +377,7 @@ init_timer();
 				Sent_error_message(fr, "File open WRITE2.TXT");
 				if (fr == FR_OK) {
 					UINT Bytes_Written;
-					BYTE Bytes_to_write[512];
+					//BYTE Bytes_to_write[512];
 					//for(int i = 0; i < 512;i++)
 					//Bytes_to_write[i] = i;
 					//for(int i = 0; i < 100;i++){
