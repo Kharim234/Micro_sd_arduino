@@ -27,7 +27,7 @@ volatile uint16_t adc_result;
 //volatile uint16_t buffer_adc[20];
 //volatile uint32_t buffer_licznik_32bit[20];
 volatile uint8_t buffer_counter = 0;
-#define CYCLE_BUFFER_SIZE 30
+#define CYCLE_BUFFER_SIZE 100
 
 struct cycle_Buffer {
 	uint8_t start_c;
@@ -262,7 +262,7 @@ ISR(TIMER0_COMPA_vect)
 	// user code here
 	licznik++;
 	licznik_32bit++;
-	if(licznik >= 10){ //125 - 1 sec
+	if(licznik >= 1){ //125 - 1 sec
 		//uart_puts("IT works");
 		licznik = 0;
 		start_conversion_asynchro();
