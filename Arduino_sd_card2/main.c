@@ -8,6 +8,7 @@
 #include <stdlib.h>
 #include <avr/interrupt.h>
 #include <string.h>
+#include <avr/pgmspace.h>
 
 FATFS FatFs;		/* FatFs work area needed for each volume */
 FIL Fil;			/* File object needed for each open file */
@@ -16,8 +17,8 @@ FIL Fil;			/* File object needed for each open file */
 #define INIT_LED_PIN() DDRB |= LED_PIN
 #define SET_LED_ON() (PORTB |= LED_PIN)
 #define SET_LED_OFF() (PORTB &= ~LED_PIN)
-
-char Buffer_string[256];
+#define SD_BLOCK_BYTES 200
+char Buffer_string[SD_BLOCK_BYTES + 30];
 volatile uint16_t test = 0;
 volatile uint32_t licznik_32bit = 0;
 volatile uint16_t licznik;
@@ -26,7 +27,8 @@ volatile uint16_t adc_result;
 //volatile uint16_t buffer_adc[20];
 //volatile uint32_t buffer_licznik_32bit[20];
 volatile uint8_t buffer_counter = 0;
-#define CYCLE_BUFFER_SIZE 40
+#define CYCLE_BUFFER_SIZE 30
+
 struct cycle_Buffer {
 	uint8_t start_c;
 	uint8_t end_c;
@@ -106,6 +108,17 @@ void uart_puts(char *str)
 	}
 }
 
+void uart_puts_P(const char *str)
+{
+	while(pgm_read_byte(str))
+	{ // Loop through string, sending each character
+		USART_Transmit(pgm_read_byte(str++));
+	}
+}
+void uart_puts_rn_P (const char *str){
+	uart_puts_P(str);
+	uart_puts_P(PSTR("\r\n"));
+}
 
 
 
@@ -129,7 +142,23 @@ void uart_puts_rn_with_length (char *str, UINT length){
 	uart_puts("\r\n");
 }
 
-
+void Sent_error_message_P(FRESULT fr, const char *message){
+	if(!fr){
+		uart_puts_P(message);
+		uart_puts_rn_P(PSTR(" - succes Error code 0"));
+	}
+	else{
+		char fr_string[ 4 ];
+		
+		itoa( fr, fr_string, 10 );
+		uart_puts_P(message);
+		uart_puts_P(PSTR(" - FAIL Error code:  " ) );
+		
+		uart_puts_rn(fr_string);
+	}
+	
+}
+/*
 void Sent_error_message(FRESULT fr, char *message){
 	if(!fr){
 		uart_puts(message);
@@ -145,7 +174,7 @@ void Sent_error_message(FRESULT fr, char *message){
 	}
 	
 }
-
+*/
 void init_timer (void){
 TCCR0A = 	(1<< WGM01); // Mode Count to clear
 //TCCR0B = (1<<CS02) | (1<<CS00); // clkI/O/1024 (from prescaler)
@@ -233,7 +262,7 @@ ISR(TIMER0_COMPA_vect)
 	// user code here
 	licznik++;
 	licznik_32bit++;
-	if(licznik >= 2){ //125 - 1 sec
+	if(licznik >= 10){ //125 - 1 sec
 		//uart_puts("IT works");
 		licznik = 0;
 		start_conversion_asynchro();
@@ -279,7 +308,9 @@ int main (void) // clock 16 Mhz
 	USART_Init(1); //Use this when you want to get very very high baud rate
 	
 	
-	uart_puts_rn("Arduino Booted");
+	//uart_puts_rn("Arduino Booted");
+	//uart_puts_P(PSTR("\r\n Arduino Booted \r\n"));
+	uart_puts_rn_P(PSTR("\r\n Arduino Booted"));
 	adc_init();
 	//start_conversion_synchro();
 	//start_conversion_synchro();
@@ -332,7 +363,8 @@ init_timer();
 // 
  	//fr = f_open(&Fil, "WRITE2.TXT", FA_WRITE | FA_OPEN_APPEND | FA_READ);	/* Create a file */
 	 fr = f_open(&Fil, "WRITE2.TXT", FA_WRITE | FA_CREATE_ALWAYS );
- 	Sent_error_message(fr, "File open WRITE2.TXT");
+ 	//Sent_error_message(fr, "File open WRITE2.TXT");
+	Sent_error_message_P(fr, PSTR("File open WRITE2.TXT"));
  	if (fr == FR_OK) {
 // 		//SET_LED_ON();
 // 		
@@ -345,7 +377,8 @@ init_timer();
 // 		//}
 // 		
  		fr = f_rewind(&Fil);
-		Sent_error_message(fr, "Rewind file");
+		//Sent_error_message(fr, "Rewind file");
+		Sent_error_message_P(fr, PSTR("Rewind file"));
  		
 		UINT Bytes_to_read = 128;
 		UINT Bytes_readed = 0;
@@ -356,7 +389,8 @@ init_timer();
 
 			fr = f_read ( &Fil, Buff, Bytes_to_read, &Bytes_readed);
 			//Sent_error_message(fr, "Read file");
-			if(fr) Sent_error_message(fr, "Read file");
+			//if(fr) Sent_error_message(fr, "Read file");
+			if(fr) Sent_error_message_P(fr, PSTR("Read file"));
 			
 			if (fr == FR_OK){
 				//uart_puts("Number of readed bytes: ");
@@ -368,7 +402,7 @@ init_timer();
 				uart_puts_with_length((char*)(Buff), Bytes_readed);
 				//uart_puts_rn("");
 				if(Bytes_to_read != Bytes_readed){
-					uart_puts_rn("End of file");
+					uart_puts_rn_P(PSTR("End of file"));
 				}
 			}
 			
@@ -376,7 +410,8 @@ init_timer();
 		
 		
 		fr = f_close(&Fil);	
-		Sent_error_message(fr, "Close file");
+		//Sent_error_message(fr, "Close file");
+		Sent_error_message_P(fr, PSTR("Close file"));
 	}
 
 // 	for (;;) {
@@ -384,10 +419,10 @@ init_timer();
 // 	}
 	while(1){
 		if(flag_adc_conversion_done){
-			uart_puts("flag_conv\r\n");
+			//uart_puts("flag_conv\r\n");
 				flag_adc_conversion_done = 0;
-				char adc_result_string[ 32 ];
-				char licznik_32bit_string[ 32 ];
+				char adc_result_string[ 10 ];
+				char licznik_32bit_string[ 10 ];
 // 				char string_size[ 32 ];
 // 				utoa( adc_result, adc_result_string, 10 );
 // 				utoa( licznik_32bit, licznik_32bit_string, 10 );
@@ -401,9 +436,9 @@ init_timer();
 				uart_puts(" ADC asynchro ");
 				uart_puts_rn(adc_result_string);*/
 				//char string_to_sd[64];
-				char string_to_sd2[64];
+				//char string_to_sd2[32];
 				//string_to_sd[0]= '\0';
-				string_to_sd2[0]= '\0';
+				//string_to_sd2[0]= '\0';
 				
 				/*strcpy(string_to_sd, "String size: ");
 				char *p = string_to_sd + strlen(string_to_sd);
@@ -426,11 +461,11 @@ init_timer();
 				uint16_t adc;
 				
 				//while(licznik_i < buffer_counter && Buffer_string_size <= 200){
-					string_to_sd2[0]= '\0';
-					uart_puts("string_to_sd2\r\n");
+					//string_to_sd2[0]= '\0';
+					//uart_puts("string_to_sd2\r\n");
 					cli();
 					
-				while(!error && Buffer_string_size <= 200){
+				while(!error && Buffer_string_size <= SD_BLOCK_BYTES){
 					sei();
 
 					error = get_from_Cycle_buffer(&adc, &licznik, &Cycle_Buffer_1);
@@ -442,14 +477,18 @@ init_timer();
 						//utoa( buffer_licznik_32bit[licznik_i], licznik_32bit_string, 10 );
 						licznik_32bit_string[0] = '\0';
 						utoa( licznik, licznik_32bit_string, 10 );
-						string_to_sd2[0] = '\0';
-						append_string(string_to_sd2, adc_result_string);
+						//string_to_sd2[0] = '\0';
+						/*append_string(string_to_sd2, adc_result_string);
 						append_string(string_to_sd2, ";");
 						append_string(string_to_sd2, licznik_32bit_string);
 						append_string(string_to_sd2, "\r\n");
-						uart_puts(string_to_sd2);
+						uart_puts(string_to_sd2);*/
 						//uart_puts("\r\n");
-						append_string(Buffer_string, string_to_sd2);
+						append_string(Buffer_string, adc_result_string);
+						append_string(Buffer_string, ";");
+						append_string(Buffer_string, licznik_32bit_string);
+						append_string(Buffer_string, "\r\n");
+						//append_string(Buffer_string, string_to_sd2);
 						Buffer_string_size = strlen(Buffer_string);
 						//licznik_i++;
 						//error = get_from_Cycle_buffer(&adc, &licznik, &Cycle_Buffer_1);
@@ -461,11 +500,11 @@ init_timer();
 				buffer_counter = 0;
 				flag_adc_conversion_done = 0;
 				sei();
-				uart_puts("string_to_sd2_end\r\n");
+				//uart_puts("string_to_sd2_end\r\n");
 				
-				uart_puts("Buffer_string \r\n");
-				uart_puts(Buffer_string);
-				uart_puts("Buffer_string_end \r\n");
+				//uart_puts("Buffer_string \r\n");
+				//uart_puts(Buffer_string);
+				//uart_puts("Buffer_string_end \r\n");
 				
 				//append_string(Buffer_string, string_to_sd2);
 				//uint16_t Buffer_string_size;
@@ -474,17 +513,18 @@ init_timer();
 				Buffer_string_size = strlen(Buffer_string);
 				//Buffer_string_size = 201;
 
-				if(Buffer_string_size > 200){
+				if(Buffer_string_size > SD_BLOCK_BYTES){
 									//Clear_Cycle_buffer(&Cycle_Buffer_1);
 									//uart_puts("Clear cycle buffer \r\n");
 					//append_string(Buffer_string, "new write\r\n");
-					uart_puts("write Buffer_string \r\n");
-					uart_puts(Buffer_string);
-					uart_puts("write Buffer_string_end \r\n");
+					//uart_puts("write Buffer_string \r\n");
+					//uart_puts(Buffer_string);
+					//uart_puts("write Buffer_string_end \r\n");
 					Buffer_string_size = strlen(Buffer_string);
 								
 				fr = f_open(&Fil, "WRITE2.TXT", FA_WRITE | FA_OPEN_APPEND );	/* Create a file */
-				Sent_error_message(fr, "File open WRITE2.TXT");
+				//Sent_error_message(fr, "File open WRITE2.TXT");
+				Sent_error_message_P(fr, PSTR("File open WRITE2.TXT"));
 				if (fr == FR_OK) {
 					UINT Bytes_Written;
 					//BYTE Bytes_to_write[512];
@@ -492,10 +532,12 @@ init_timer();
 					//Bytes_to_write[i] = i;
 					//for(int i = 0; i < 100;i++){
 						fr = f_write(&Fil, (BYTE*)(Buffer_string), strlen(Buffer_string), &Bytes_Written);	/* Write data to the file */
-						Sent_error_message(fr, "File write WRITE2.TXT");
+						//Sent_error_message(fr, "File write WRITE2.TXT");
+						Sent_error_message_P(fr, PSTR("File write WRITE2.TXT"));
 					//}
 					fr = f_close(&Fil);
-					Sent_error_message(fr, "Close file WRITE2.TXT");
+					//Sent_error_message(fr, "Close file WRITE2.TXT");
+					Sent_error_message_P(fr, PSTR("Close file WRITE2.TXT"));
 				
 				}
 				if (fr == FR_DISK_ERR){
