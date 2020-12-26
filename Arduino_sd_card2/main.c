@@ -21,8 +21,54 @@ char Buffer_string[256];
 volatile uint16_t test = 0;
 volatile uint32_t licznik_32bit = 0;
 volatile uint16_t licznik;
-volatile uint8_t flag= 0;
+volatile uint8_t flag_adc_conversion_done= 0;
 volatile uint16_t adc_result;
+//volatile uint16_t buffer_adc[20];
+//volatile uint32_t buffer_licznik_32bit[20];
+volatile uint8_t buffer_counter = 0;
+#define CYCLE_BUFFER_SIZE 40
+struct cycle_Buffer {
+	uint8_t start_c;
+	uint8_t end_c;
+	uint16_t adc_result_buffer[CYCLE_BUFFER_SIZE];
+	uint32_t licznik_buffer[CYCLE_BUFFER_SIZE];
+	};
+	
+volatile struct cycle_Buffer Cycle_Buffer_1;
+
+void put_on_Cycle_buffer (uint16_t adc_result_f, uint32_t licznik_f,volatile struct cycle_Buffer * Cycle_Buffer_f){
+	Cycle_Buffer_f->adc_result_buffer[Cycle_Buffer_f->end_c] = adc_result_f;
+	Cycle_Buffer_f->licznik_buffer[Cycle_Buffer_f->end_c] = licznik_f;
+	Cycle_Buffer_f->end_c ++;
+	if(Cycle_Buffer_f->end_c >= CYCLE_BUFFER_SIZE){
+		Cycle_Buffer_f->end_c = 0;
+	}
+		
+	if( Cycle_Buffer_f->end_c == Cycle_Buffer_f->start_c ){
+		Cycle_Buffer_f->start_c ++;
+			if(Cycle_Buffer_f->start_c >= CYCLE_BUFFER_SIZE){
+				Cycle_Buffer_f->start_c = 0;
+			}
+	}
+}
+
+uint8_t get_from_Cycle_buffer (uint16_t * adc_result_f, uint32_t * licznik_f,volatile struct cycle_Buffer * Cycle_Buffer_f){
+	if(Cycle_Buffer_f->start_c == Cycle_Buffer_f->end_c)
+		return 1; // Error 1 -> Empty Cycle buffer
+		
+	* adc_result_f = Cycle_Buffer_f->adc_result_buffer[Cycle_Buffer_f->start_c];
+	* licznik_f = Cycle_Buffer_f->licznik_buffer[Cycle_Buffer_f->start_c];
+	
+	Cycle_Buffer_f->start_c++;
+	if(Cycle_Buffer_f->start_c >= CYCLE_BUFFER_SIZE){
+		Cycle_Buffer_f->start_c = 0;
+	}
+	
+	return 0;
+}
+void Clear_Cycle_buffer (volatile struct cycle_Buffer * Cycle_Buffer_f){
+	Cycle_Buffer_f->start_c = Cycle_Buffer_f->end_c;
+}
 
 void USART_Init( unsigned int ubrr)
 {
@@ -102,7 +148,8 @@ void Sent_error_message(FRESULT fr, char *message){
 
 void init_timer (void){
 TCCR0A = 	(1<< WGM01); // Mode Count to clear
-TCCR0B = (1<<CS02) | (1<<CS00); // clkI/O/1024 (from prescaler)
+//TCCR0B = (1<<CS02) | (1<<CS00); // clkI/O/1024 (from prescaler)
+TCCR0B = (1<<CS02) ; // clkI/O/256 (from prescaler)
 TIMSK0 = (1<<OCIE0A); //  Timer/Counter Output Compare Match B Interrupt Enable
 
 
@@ -171,8 +218,13 @@ ISR(ADC_vect)
 	adc_result = conversion_result();
 		
 	//ADCSRA |= (1<<ADIF);
-	flag = 1;
-		
+	flag_adc_conversion_done = 1;
+	/*buffer_adc[buffer_counter] = adc_result;
+	buffer_licznik_32bit[buffer_counter] = licznik_32bit;
+	buffer_counter++;
+	if(buffer_counter >= 20)
+		buffer_counter = 0;*/
+	put_on_Cycle_buffer(adc_result, licznik_32bit, &Cycle_Buffer_1);	
 
 	
 }
@@ -181,7 +233,7 @@ ISR(TIMER0_COMPA_vect)
 	// user code here
 	licznik++;
 	licznik_32bit++;
-	if(licznik >= 125){ //dopelnienie do 1sec
+	if(licznik >= 2){ //125 - 1 sec
 		//uart_puts("IT works");
 		licznik = 0;
 		start_conversion_asynchro();
@@ -213,14 +265,18 @@ uint8_t append_string_with_limits(char *string, char *string_to_append, char max
 	return 1;
 }
 
-
+				uint32_t licznik2;
+				uint16_t adc2;
+				//char string_to_sd3[64];
+				uint8_t Error2;
 int main (void) // clock 16 Mhz
 {
 
+
 	//CLKPR  = 1<<CLKPCE; //change clock to 8 Mhz
 	//CLKPR  = 1<<CLKPS0;
-	USART_Init_Baud_Rate( 38400 ); // do not work at very high baud rate
-	//USART_Init(1); //Use this when you want to get very very high baud rate
+	//USART_Init_Baud_Rate( 38400 ); // do not work at very high baud rate
+	USART_Init(1); //Use this when you want to get very very high baud rate
 	
 	
 	uart_puts_rn("Arduino Booted");
@@ -274,8 +330,8 @@ init_timer();
 // 
 // 
 // 
- 	fr = f_open(&Fil, "WRITE2.TXT", FA_WRITE | FA_OPEN_APPEND | FA_READ);	/* Create a file */
-	// fr = f_open(&Fil, "WRITE2.TXT", FA_WRITE | FA_CREATE_ALWAYS );
+ 	//fr = f_open(&Fil, "WRITE2.TXT", FA_WRITE | FA_OPEN_APPEND | FA_READ);	/* Create a file */
+	 fr = f_open(&Fil, "WRITE2.TXT", FA_WRITE | FA_CREATE_ALWAYS );
  	Sent_error_message(fr, "File open WRITE2.TXT");
  	if (fr == FR_OK) {
 // 		//SET_LED_ON();
@@ -327,30 +383,32 @@ init_timer();
 // 
 // 	}
 	while(1){
-		if(flag){
-				flag = 0;
+		if(flag_adc_conversion_done){
+			uart_puts("flag_conv\r\n");
+				flag_adc_conversion_done = 0;
 				char adc_result_string[ 32 ];
 				char licznik_32bit_string[ 32 ];
-				char string_size[ 32 ];
-				utoa( adc_result, adc_result_string, 10 );
-				utoa( licznik_32bit, licznik_32bit_string, 10 );
-				UINT string_size_int = strlen(licznik_32bit_string);
-				utoa( string_size_int, string_size, 10 );
-				
+// 				char string_size[ 32 ];
+// 				utoa( adc_result, adc_result_string, 10 );
+// 				utoa( licznik_32bit, licznik_32bit_string, 10 );
+// 				UINT string_size_int = strlen(licznik_32bit_string);
+// 				utoa( string_size_int, string_size, 10 );
+// 				
 				/*uart_puts("String size: ");
 				uart_puts(string_size);
 				uart_puts(" Licznik_32bit: ");
 				uart_puts(licznik_32bit_string);
 				uart_puts(" ADC asynchro ");
 				uart_puts_rn(adc_result_string);*/
-				char string_to_sd[64];
+				//char string_to_sd[64];
 				char string_to_sd2[64];
-				string_to_sd[0]= '\0';
+				//string_to_sd[0]= '\0';
 				string_to_sd2[0]= '\0';
 				
 				/*strcpy(string_to_sd, "String size: ");
 				char *p = string_to_sd + strlen(string_to_sd);
 				strcpy(p, licznik_32bit_string);*/
+				/*
 				append_string(string_to_sd, "String size: ");
 				append_string(string_to_sd, string_size);
 				append_string(string_to_sd, " Licznik_32bit: ");
@@ -360,18 +418,70 @@ init_timer();
 				append_string(string_to_sd, "\r\n");
 				//uart_puts_rn(string_to_sd);
 				uart_puts(string_to_sd);
+				*/
+				//uint8_t licznik_i = 0;
+				uint16_t Buffer_string_size = 0;
+				uint8_t error = 0;
+				uint32_t licznik;
+				uint16_t adc;
 				
-				append_string(string_to_sd2, licznik_32bit_string);
-				append_string(string_to_sd2, ";");
-				append_string(string_to_sd2, adc_result_string);
-				append_string(string_to_sd2, "\r\n");
+				//while(licznik_i < buffer_counter && Buffer_string_size <= 200){
+					string_to_sd2[0]= '\0';
+					uart_puts("string_to_sd2\r\n");
+					cli();
+					
+				while(!error && Buffer_string_size <= 200){
+					sei();
+
+					error = get_from_Cycle_buffer(&adc, &licznik, &Cycle_Buffer_1);
+					if(!error){
+						//put_on_Cycle_buffer(adc_result, licznik_32bit, Cycle_Buffer_1);
+						//utoa( buffer_adc[licznik_i], adc_result_string, 10 );
+						adc_result_string[0] = '\0';
+						utoa( adc, adc_result_string, 10 );
+						//utoa( buffer_licznik_32bit[licznik_i], licznik_32bit_string, 10 );
+						licznik_32bit_string[0] = '\0';
+						utoa( licznik, licznik_32bit_string, 10 );
+						string_to_sd2[0] = '\0';
+						append_string(string_to_sd2, adc_result_string);
+						append_string(string_to_sd2, ";");
+						append_string(string_to_sd2, licznik_32bit_string);
+						append_string(string_to_sd2, "\r\n");
+						uart_puts(string_to_sd2);
+						//uart_puts("\r\n");
+						append_string(Buffer_string, string_to_sd2);
+						Buffer_string_size = strlen(Buffer_string);
+						//licznik_i++;
+						//error = get_from_Cycle_buffer(&adc, &licznik, &Cycle_Buffer_1);
+					}
+					
+					cli();
+				}
 				
-				append_string(Buffer_string, string_to_sd2);
-				uint16_t Buffer_string_size;
+				buffer_counter = 0;
+				flag_adc_conversion_done = 0;
+				sei();
+				uart_puts("string_to_sd2_end\r\n");
+				
+				uart_puts("Buffer_string \r\n");
+				uart_puts(Buffer_string);
+				uart_puts("Buffer_string_end \r\n");
+				
+				//append_string(Buffer_string, string_to_sd2);
+				//uint16_t Buffer_string_size;
+				//uart_puts(string_to_sd2);
 				
 				Buffer_string_size = strlen(Buffer_string);
 				//Buffer_string_size = 201;
+
 				if(Buffer_string_size > 200){
+									//Clear_Cycle_buffer(&Cycle_Buffer_1);
+									//uart_puts("Clear cycle buffer \r\n");
+					//append_string(Buffer_string, "new write\r\n");
+					uart_puts("write Buffer_string \r\n");
+					uart_puts(Buffer_string);
+					uart_puts("write Buffer_string_end \r\n");
+					Buffer_string_size = strlen(Buffer_string);
 								
 				fr = f_open(&Fil, "WRITE2.TXT", FA_WRITE | FA_OPEN_APPEND );	/* Create a file */
 				Sent_error_message(fr, "File open WRITE2.TXT");
@@ -394,7 +504,35 @@ init_timer();
 					f_mount(&FatFs, "", 0);
 					}
 			delete_string(Buffer_string);
-			uart_puts("Buffer_string deleted\r\n");	
+			Buffer_string[0]= '\0';
+			//uart_puts("Buffer_string deleted\r\n");	
+			
+							//char adc_result_string2[ 32 ];
+							//char licznik_32bit_string2[ 32 ];
+
+			//string_to_sd3[0]= '\0';
+
+			/*Error2 = get_from_Cycle_buffer(&adc2, &licznik2, &Cycle_Buffer_1);
+			while (!Error2)
+			{
+				utoa( adc2, adc_result_string2, 10 );
+				uart_puts(adc_result_string2);
+				uart_puts(";");
+				//utoa( buffer_licznik_32bit[licznik_i], licznik_32bit_string, 10 );
+				utoa( licznik2, licznik_32bit_string2, 10 );
+				uart_puts(licznik_32bit_string2);
+				uart_puts("\r\n");
+				//append_string(string_to_sd3, adc_result_string2);
+				//append_string(string_to_sd3, ";");
+				//append_string(string_to_sd3, licznik_32bit_string2);
+				//append_string(string_to_sd3, "\r\n");
+				//uart_puts(licznik_32bit_string);
+				//uart_puts("\r\n");
+				//uart_puts(string_to_sd3);
+				//string_to_sd3[0]= '\0';
+				Error2 = get_from_Cycle_buffer(&adc2, &licznik2, &Cycle_Buffer_1);
+			}
+			uart_puts("Sented cycle buffer values \r\n");*/
 			}
 		}
 		
