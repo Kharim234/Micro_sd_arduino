@@ -192,8 +192,8 @@ sei();
 void adc_init (void){
 	ADMUX = (1<<REFS1)|(1<<REFS0)					// set internal 1.1V reference voltage
 			//| (1<<MUX3) | (1<<MUX2) | (1<<MUX1);	// set MUX to 1.1V
-			| (1<<MUX3) ;	// set MUX to temperature sensor
-			//| (1<<MUX2) | (1<<MUX0);	// set MUX to ADC5
+			//| (1<<MUX3) ;	// set MUX to temperature sensor
+			| (1<<MUX2) | (1<<MUX0);	// set MUX to ADC5
 	ADCSRA = (1<<ADEN) // enable adc
 			| (1<<ADPS2) | (1<<ADPS1) | (1<<ADPS0);// set prescaler to 128
 }
@@ -202,7 +202,7 @@ uint16_t conversion_result (void){
 	
 	//conv_result = (ADCH << 8) | (ADCL);
 	conv_result = ADCW;
-	return conv_result - 337;
+	return conv_result;
 }
 
 void start_conversion_synchro (void){
@@ -518,7 +518,7 @@ init_timer();
 									//uart_puts("Clear cycle buffer \r\n");
 					//append_string(Buffer_string, "new write\r\n");
 					//uart_puts("write Buffer_string \r\n");
-					//uart_puts(Buffer_string);
+					uart_puts(Buffer_string);
 					//uart_puts("write Buffer_string_end \r\n");
 					Buffer_string_size = strlen(Buffer_string);
 								
