@@ -17,7 +17,7 @@
 
 
 uint8_t state_adc;
-void state_function_ADC (uint8_t state);
+void state_function_ADC (uint8_t *state);
 
 void start_conversion_asynchro_adc (void){
 	
@@ -42,28 +42,27 @@ void start_measure_current_ADC(void){
 }
 
 void run_next_step_state_func_ADC (void){
-	state_function_ADC (state_adc);
+	state_function_ADC (&state_adc);
 }
 
-void state_function_ADC (uint8_t state){
-	switch (state)
+void state_function_ADC (uint8_t *state){
+	switch (*state)
 	{
 	case RECEIVE_MEASURE_CURRENT_AND_START_BATT_VCC_MEASURE:
 		adc_result = conversion_result();
-		flag_adc_conversion_done = 1;
+		//flag_adc_conversion_done = 1;
 		put_on_Cycle_buffer(adc_result, licznik_32bit, &Cycle_Buffer_1);
 		
-		//set_ADC_channel(ADC_CURRENT);
-		//start_conversion_asynchro_adc();
-		//state = RECEIVE_BATT_VCC_MEASURE;
+		set_ADC_channel(ADC_BATT_VCC);
+		start_conversion_asynchro_adc();
+		*state = RECEIVE_BATT_VCC_MEASURE;
 		break;
 		
 	case RECEIVE_BATT_VCC_MEASURE:
 	
-		adc_result = conversion_result();
-		put_on_Cycle_buffer(adc_result, licznik_32bit, &Cycle_Buffer_1);
+		adc_result2 = conversion_result();
 		flag_adc_conversion_done = 1;
-		state = STATE_DO_NOTHING;
+		*state = STATE_DO_NOTHING;
 		break;
 		
 	
