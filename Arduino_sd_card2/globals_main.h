@@ -22,6 +22,7 @@ volatile struct cycle_Buffer Cycle_Buffer_1;
 volatile uint8_t flag_adc_conversion_done;
 volatile uint16_t adc_result;
 volatile uint32_t licznik_32bit;
+volatile uint16_t adc_result2;
 
 void put_on_Cycle_buffer (uint16_t adc_result_f, uint32_t licznik_f,volatile struct cycle_Buffer * Cycle_Buffer_f);
 uint8_t get_from_Cycle_buffer (uint16_t * adc_result_f, uint32_t * licznik_f,volatile struct cycle_Buffer * Cycle_Buffer_f);

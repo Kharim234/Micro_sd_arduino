@@ -485,18 +485,20 @@ init_timer();
 					LCD_Clear();
 					uint8_t line = 0;
 					LCD_GotoXY(0, line);
-					LCD_PrintString("ADC: ");
-					uint32_t adc_32_converted_to_mV;
+					LCD_PrintString("ADC:");
+					uint32_t adc_32_converted_to_mV, adc_32_converted_to_mV2;
 					adc_32_converted_to_mV = ((uint32_t)adc * 1100) / 1024;
 					LCD_PrintInteger(adc_32_converted_to_mV);
-					LCD_PrintString("mV");
-					line = 1;
-					LCD_GotoXY(0, line);
-					LCD_PrintString("Count: ");
+					LCD_PrintString("mV ");
 					uint32_t seconds;
 					seconds = licznik / 125;
 					LCD_PrintInteger(seconds);
-					LCD_PrintString(" Sec");
+					LCD_PrintString("s");
+					line = 1;
+					LCD_GotoXY(0, line);
+					LCD_PrintString("ADC2:");
+					adc_32_converted_to_mV2 = ((uint32_t)adc_result2 * 1100) / 1024;
+					LCD_PrintInteger(adc_32_converted_to_mV2);
 	
 					
 					cli();
