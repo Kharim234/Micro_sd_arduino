@@ -6,6 +6,8 @@ ADC_arduino.c
 
 ff.c
 
+globals_main.c
+
 HD44780.c
 
 lcd.c

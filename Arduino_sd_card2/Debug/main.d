@@ -19,6 +19,7 @@ main.d main.o: .././main.c \
  c:\program\ files\ (x86)\atmel\studio\7.0\toolchain\avr8\avr8-gnu-toolchain\avr\include\avr\interrupt.h \
  c:\program\ files\ (x86)\atmel\studio\7.0\toolchain\avr8\avr8-gnu-toolchain\avr\include\string.h \
  c:\program\ files\ (x86)\atmel\studio\7.0\toolchain\avr8\avr8-gnu-toolchain\avr\include\avr\pgmspace.h \
+ .././globals_main.h .././ADC_arduino.h \
  .././AVR-HD44780-master/Files/HD44780.h \
  .././AVR-HD44780-master/Files/IO_Macros.h \
  .././AVR-HD44780-master/Files/HD44780_Settings.h
@@ -64,6 +65,10 @@ c:\program\ files\ (x86)\atmel\studio\7.0\toolchain\avr8\avr8-gnu-toolchain\avr\
 c:\program\ files\ (x86)\atmel\studio\7.0\toolchain\avr8\avr8-gnu-toolchain\avr\include\string.h:
 
 c:\program\ files\ (x86)\atmel\studio\7.0\toolchain\avr8\avr8-gnu-toolchain\avr\include\avr\pgmspace.h:
+
+.././globals_main.h:
+
+.././ADC_arduino.h:
 
 .././AVR-HD44780-master/Files/HD44780.h:
 

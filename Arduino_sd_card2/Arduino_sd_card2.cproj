@@ -152,6 +152,12 @@
     <Compile Include="ffconf.h">
       <SubType>compile</SubType>
     </Compile>
+    <Compile Include="globals_main.c">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="globals_main.h">
+      <SubType>compile</SubType>
+    </Compile>
     <Compile Include="HD44780.c">
       <SubType>compile</SubType>
     </Compile>

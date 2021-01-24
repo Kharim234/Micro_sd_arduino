@@ -9,6 +9,8 @@
 #include <avr/interrupt.h>
 #include <string.h>
 #include <avr/pgmspace.h>
+#include "globals_main.h"
+#include "ADC_arduino.h"
 
 #include "AVR-HD44780-master/Files/HD44780.h"
 
@@ -23,57 +25,16 @@ FIL Fil;			/* File object needed for each open file */
 #define SD_BLOCK_BYTES 200
 char Buffer_string[SD_BLOCK_BYTES + 30];
 volatile uint16_t test = 0;
-volatile uint32_t licznik_32bit = 0;
+
 volatile uint16_t licznik;
-volatile uint8_t flag_adc_conversion_done= 0;
-volatile uint16_t adc_result;
+
 //volatile uint16_t buffer_adc[20];
 //volatile uint32_t buffer_licznik_32bit[20];
 volatile uint8_t buffer_counter = 0;
-#define CYCLE_BUFFER_SIZE 20
 
-struct cycle_Buffer {
-	uint8_t start_c;
-	uint8_t end_c;
-	uint16_t adc_result_buffer[CYCLE_BUFFER_SIZE];
-	uint32_t licznik_buffer[CYCLE_BUFFER_SIZE];
-	};
-	
-volatile struct cycle_Buffer Cycle_Buffer_1;
 
-void put_on_Cycle_buffer (uint16_t adc_result_f, uint32_t licznik_f,volatile struct cycle_Buffer * Cycle_Buffer_f){
-	Cycle_Buffer_f->adc_result_buffer[Cycle_Buffer_f->end_c] = adc_result_f;
-	Cycle_Buffer_f->licznik_buffer[Cycle_Buffer_f->end_c] = licznik_f;
-	Cycle_Buffer_f->end_c ++;
-	if(Cycle_Buffer_f->end_c >= CYCLE_BUFFER_SIZE){
-		Cycle_Buffer_f->end_c = 0;
-	}
-		
-	if( Cycle_Buffer_f->end_c == Cycle_Buffer_f->start_c ){
-		Cycle_Buffer_f->start_c ++;
-			if(Cycle_Buffer_f->start_c >= CYCLE_BUFFER_SIZE){
-				Cycle_Buffer_f->start_c = 0;
-			}
-	}
-}
 
-uint8_t get_from_Cycle_buffer (uint16_t * adc_result_f, uint32_t * licznik_f,volatile struct cycle_Buffer * Cycle_Buffer_f){
-	if(Cycle_Buffer_f->start_c == Cycle_Buffer_f->end_c)
-		return 1; // Error 1 -> Empty Cycle buffer
-		
-	* adc_result_f = Cycle_Buffer_f->adc_result_buffer[Cycle_Buffer_f->start_c];
-	* licznik_f = Cycle_Buffer_f->licznik_buffer[Cycle_Buffer_f->start_c];
-	
-	Cycle_Buffer_f->start_c++;
-	if(Cycle_Buffer_f->start_c >= CYCLE_BUFFER_SIZE){
-		Cycle_Buffer_f->start_c = 0;
-	}
-	
-	return 0;
-}
-void Clear_Cycle_buffer (volatile struct cycle_Buffer * Cycle_Buffer_f){
-	Cycle_Buffer_f->start_c = Cycle_Buffer_f->end_c;
-}
+
 
 void USART_Init( unsigned int ubrr)
 {
@@ -201,13 +162,7 @@ void adc_init (void){
 	ADCSRA = (1<<ADEN) // enable adc
 			| (1<<ADPS2) | (1<<ADPS1) | (1<<ADPS0);// set prescaler to 128
 }
-uint16_t conversion_result (void){
-	uint16_t conv_result;
-	
-	//conv_result = (ADCH << 8) | (ADCL);
-	conv_result = ADCW;
-	return conv_result;
-}
+
 
 void start_conversion_synchro (void){
 	uint16_t result = 0;
@@ -248,16 +203,17 @@ void start_conversion_asynchro (void){
 ISR(ADC_vect)
 {
 	
-	adc_result = conversion_result();
+	//adc_result = conversion_result();
 		
 	//ADCSRA |= (1<<ADIF);
-	flag_adc_conversion_done = 1;
+	//flag_adc_conversion_done = 1;
 	/*buffer_adc[buffer_counter] = adc_result;
 	buffer_licznik_32bit[buffer_counter] = licznik_32bit;
 	buffer_counter++;
 	if(buffer_counter >= 20)
 		buffer_counter = 0;*/
-	put_on_Cycle_buffer(adc_result, licznik_32bit, &Cycle_Buffer_1);	
+	//put_on_Cycle_buffer(adc_result, licznik_32bit, &Cycle_Buffer_1);
+	run_next_step_state_func_ADC();	
 
 	
 }
@@ -269,7 +225,12 @@ ISR(TIMER0_COMPA_vect)
 	if(licznik >= 125){ //125 - 1 sec
 		//uart_puts("IT works");
 		licznik = 0;
-		start_conversion_asynchro();
+		
+		//init_and_start_state_machine_ADC();
+		//set_ADC_channel(ADCH3);
+		
+		 start_measure_current_ADC();
+		//start_conversion_asynchro();
 		//start_conversion_synchro();
 	}
 	
@@ -305,7 +266,8 @@ uint8_t append_string_with_limits(char *string, char *string_to_append, char max
 int main (void) // clock 16 Mhz
 {
 	//PORTC &= ~(1<<PORTC5);
-
+	licznik_32bit = 0;
+	flag_adc_conversion_done = 0;
 	LCD_Setup();
 	uint32_t timer = 0;
 	//while(1){
