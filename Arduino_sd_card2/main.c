@@ -10,6 +10,9 @@
 #include <string.h>
 #include <avr/pgmspace.h>
 
+#include "AVR-HD44780-master/Files/HD44780.h"
+
+
 FATFS FatFs;		/* FatFs work area needed for each volume */
 FIL Fil;			/* File object needed for each open file */
 
@@ -27,7 +30,7 @@ volatile uint16_t adc_result;
 //volatile uint16_t buffer_adc[20];
 //volatile uint32_t buffer_licznik_32bit[20];
 volatile uint8_t buffer_counter = 0;
-#define CYCLE_BUFFER_SIZE 100
+#define CYCLE_BUFFER_SIZE 20
 
 struct cycle_Buffer {
 	uint8_t start_c;
@@ -177,8 +180,8 @@ void Sent_error_message(FRESULT fr, char *message){
 */
 void init_timer (void){
 TCCR0A = 	(1<< WGM01); // Mode Count to clear
-//TCCR0B = (1<<CS02) | (1<<CS00); // clkI/O/1024 (from prescaler)
-TCCR0B = (1<<CS02) ; // clkI/O/256 (from prescaler)
+TCCR0B = (1<<CS02) | (1<<CS00); // clkI/O/1024 (from prescaler)
+//TCCR0B = (1<<CS02) ; // clkI/O/256 (from prescaler)
 TIMSK0 = (1<<OCIE0A); //  Timer/Counter Output Compare Match B Interrupt Enable
 
 
@@ -191,6 +194,7 @@ sei();
 }
 void adc_init (void){
 	ADMUX = (1<<REFS1)|(1<<REFS0)					// set internal 1.1V reference voltage
+			// No mux setted = measure on adc0
 			//| (1<<MUX3) | (1<<MUX2) | (1<<MUX1);	// set MUX to 1.1V
 			//| (1<<MUX3) ;	// set MUX to temperature sensor
 			| (1<<MUX2) | (1<<MUX0);	// set MUX to ADC5
@@ -262,7 +266,7 @@ ISR(TIMER0_COMPA_vect)
 	// user code here
 	licznik++;
 	licznik_32bit++;
-	if(licznik >= 1){ //125 - 1 sec
+	if(licznik >= 125){ //125 - 1 sec
 		//uart_puts("IT works");
 		licznik = 0;
 		start_conversion_asynchro();
@@ -300,14 +304,33 @@ uint8_t append_string_with_limits(char *string, char *string_to_append, char max
 				uint8_t Error2;
 int main (void) // clock 16 Mhz
 {
+	//PORTC &= ~(1<<PORTC5);
+
+	LCD_Setup();
+	uint32_t timer = 0;
+	//while(1){
+		
+	//Print
+	uint8_t line;
+	for (line = 0; line < 2; line++)
+	{
+		LCD_GotoXY(0, line);
+		LCD_PrintString("Line: ");
+		LCD_PrintInteger(timer);
+		timer++;
+		_delay_ms(500);
+	}
+	
+	_delay_ms(500);	
+	//}
 
 
 	//CLKPR  = 1<<CLKPCE; //change clock to 8 Mhz
 	//CLKPR  = 1<<CLKPS0;
 	//USART_Init_Baud_Rate( 38400 ); // do not work at very high baud rate
 	USART_Init(1); //Use this when you want to get very very high baud rate
-	
-	
+
+
 	//uart_puts_rn("Arduino Booted");
 	//uart_puts_P(PSTR("\r\n Arduino Booted \r\n"));
 	uart_puts_rn_P(PSTR("\r\n Arduino Booted"));
@@ -419,6 +442,10 @@ init_timer();
 // 	}
 	while(1){
 		if(flag_adc_conversion_done){
+			
+
+			
+			uart_puts("1 sec\r\n");
 			//uart_puts("flag_conv\r\n");
 				flag_adc_conversion_done = 0;
 				char adc_result_string[ 10 ];
@@ -493,6 +520,22 @@ init_timer();
 						//licznik_i++;
 						//error = get_from_Cycle_buffer(&adc, &licznik, &Cycle_Buffer_1);
 					}
+					LCD_Clear();
+					uint8_t line = 0;
+					LCD_GotoXY(0, line);
+					LCD_PrintString("ADC: ");
+					uint32_t adc_32_converted_to_mV;
+					adc_32_converted_to_mV = ((uint32_t)adc * 1100) / 1024;
+					LCD_PrintInteger(adc_32_converted_to_mV);
+					LCD_PrintString("mV");
+					line = 1;
+					LCD_GotoXY(0, line);
+					LCD_PrintString("Count: ");
+					uint32_t seconds;
+					seconds = licznik / 125;
+					LCD_PrintInteger(seconds);
+					LCD_PrintString(" Sec");
+	
 					
 					cli();
 				}
